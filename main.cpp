@@ -1,9 +1,3 @@
-//---------------------------------------
-// Program: office.cpp
-// Purpose: To display office furniture
-// Author:  John Gauch
-// Date:    September 2008
-//---------------------------------------
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
