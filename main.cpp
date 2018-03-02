@@ -14,12 +14,24 @@ using namespace std;
 // Global variables 
 const int WINDOW_WIDTH = 1000;
 const int WINDOW_HEIGHT = 500;
+// Sleep time in milliseconds for timer function
+const int TIME = 20;
+const int INIT_X = 200;
+const int INIT_Y = WINDOW_HEIGHT - 200;
+const int GRAVITY = -20;
+const int MAX_ANIMATION_STEPS = 20;
 bool brickSelected = false;
 bool isAirborn = false;
+bool landed = false;
+bool randColor = false;
 int xangle = 0;
 int yangle = 0;
-int brickX = 200;
-int brickY = WINDOW_HEIGHT - 200;
+int zangle = 0;
+float xRotateSpeed = 0.0;
+float yRotateSpeed = 0.0;
+float zRotateSpeed = 0.0;
+int brickX = INIT_X;
+int brickY = INIT_Y;
 int brickZ = 0;
 int brickWidth = 20;
 int brickHeight = 10;
@@ -28,9 +40,12 @@ int initialX = brickX;
 int initialY = brickY;
 int finalX = initialX;
 int finalY = initialY;
+int animationStep = 0;
 float xVelocity = 0;
 float yVelocity = 0;
-float gravity = 0;
+float downwardForce = GRAVITY;
+double airTime = 0;
+clock_t startTime;
 // GLenum mode = GL_POLYGON;
 GLenum mode = GL_LINE_LOOP;
 
@@ -43,6 +58,19 @@ void init() {
 	glLoadIdentity();
 	glOrtho(0.0, 1000.0, 500.0, 0.0, -500.0, 500.0);
 	glEnable(GL_DEPTH_TEST);
+
+	// Get random rotation speeds
+	srand(time(NULL));
+	xRotateSpeed = rand() % 10 + 1;
+	yRotateSpeed = rand() % 10 + 1;
+	zRotateSpeed = rand() % 10 + 1;
+	cout << "X, Y, Z Rotate Speeds: " << xRotateSpeed << ", " << yRotateSpeed << ", " << zRotateSpeed << endl;
+}
+
+void randomRGB(float& red, float& green, float& blue) {
+	red = ((float)rand() / (RAND_MAX));
+	green = ((float)rand() / (RAND_MAX));
+	blue = ((float)rand() / (RAND_MAX));
 }
 
 //---------------------------------------
@@ -60,54 +88,179 @@ void brick(float xmin, float xmax, float ymin,
 	float gx = xmax, gy = ymax, gz = zmin;
 	float hx = xmin, hy = ymax, hz = zmin;
 
-	// Draw 6 faces
-	glBegin(mode);
-	glColor3f(1.0, 0.0, 0.0);
-	glVertex3f(ax, ay, az);
-	glVertex3f(bx, by, bz);
-	glVertex3f(cx, cy, cz);
-	glVertex3f(dx, dy, dz);
-	glEnd();
+	if (randColor) {
+		// Draw brick with random colors
+		float red, green, blue;
+		randomRGB(red, green, blue);
 
-	glBegin(mode);
-	glColor3f(0.0, 1.0, 0.0);
-	glVertex3f(ax, ay, az);
-	glVertex3f(dx, dy, dz);
-	glVertex3f(hx, hy, hz);
-	glVertex3f(ex, ey, ez);
-	glEnd();
+		// Draw 6 faces
+		glBegin(mode);
+		glColor3f(red, green, blue);
+		glVertex3f(ax, ay, az);
+		glVertex3f(bx, by, bz);
+		glVertex3f(cx, cy, cz);
+		glVertex3f(dx, dy, dz);
+		glEnd();
 
-	glBegin(mode);
-	glColor3f(0.0, 0.0, 1.0);
-	glVertex3f(ax, ay, az);
-	glVertex3f(ex, ey, ez);
-	glVertex3f(fx, fy, fz);
-	glVertex3f(bx, by, bz);
-	glEnd();
+		randomRGB(red, green, blue);
+		glBegin(mode);
+		glColor3f(red, green, blue);
+		glVertex3f(gx, gy, gz);
+		glVertex3f(fx, fy, fz);
+		glVertex3f(ex, ey, ez);
+		glVertex3f(hx, hy, hz);
+		glEnd();
 
-	glBegin(mode);
-	glColor3f(0.0, 1.0, 1.0);
-	glVertex3f(gx, gy, gz);
-	glVertex3f(fx, fy, fz);
-	glVertex3f(ex, ey, ez);
-	glVertex3f(hx, hy, hz);
-	glEnd();
+		randomRGB(red, green, blue);
+		glBegin(mode);
+		glColor3f(red, green, blue);
+		glVertex3f(ax, ay, az);
+		glVertex3f(dx, dy, dz);
+		glVertex3f(hx, hy, hz);
+		glVertex3f(ex, ey, ez);
+		glEnd();
 
-	glBegin(mode);
-	glColor3f(1.0, 0.0, 1.0);
-	glVertex3f(gx, gy, gz);
-	glVertex3f(cx, cy, cz);
-	glVertex3f(bx, by, bz);
-	glVertex3f(fx, fy, fz);
-	glEnd();
+		randomRGB(red, green, blue);
+		glBegin(mode);
+		glColor3f(red, green, blue);
+		glVertex3f(ax, ay, az);
+		glVertex3f(ex, ey, ez);
+		glVertex3f(fx, fy, fz);
+		glVertex3f(bx, by, bz);
+		glEnd();
 
-	glBegin(mode);
-	glColor3f(1.0, 1.0, 0.0);
-	glVertex3f(gx, gy, gz);
-	glVertex3f(hx, hy, hz);
-	glVertex3f(dx, dy, dz);
-	glVertex3f(cx, cy, cz);
-	glEnd();
+		randomRGB(red, green, blue);
+		glBegin(mode);
+		glColor3f(red, green, blue);
+		glVertex3f(gx, gy, gz);
+		glVertex3f(cx, cy, cz);
+		glVertex3f(bx, by, bz);
+		glVertex3f(fx, fy, fz);
+		glEnd();
+
+		randomRGB(red, green, blue);
+		glBegin(mode);
+		glColor3f(red, green, blue);
+		glVertex3f(gx, gy, gz);
+		glVertex3f(hx, hy, hz);
+		glVertex3f(dx, dy, dz);
+		glVertex3f(cx, cy, cz);
+		glEnd();
+	}
+	else {
+		// Draw standard brick
+		// Draw 6 faces
+		glBegin(mode);
+		glColor3f(1.0, 0.0, 0.0);
+		glVertex3f(ax, ay, az);
+		glVertex3f(bx, by, bz);
+		glVertex3f(cx, cy, cz);
+		glVertex3f(dx, dy, dz);
+		glEnd();
+
+		glBegin(mode);
+		glColor3f(0.0, 0.0, 1.0);
+		glVertex3f(gx, gy, gz);
+		glVertex3f(fx, fy, fz);
+		glVertex3f(ex, ey, ez);
+		glVertex3f(hx, hy, hz);
+		glEnd();
+
+		glBegin(mode);
+		glColor3f(0.0, 1.0, 0.0);
+		glVertex3f(ax, ay, az);
+		glVertex3f(dx, dy, dz);
+		glVertex3f(hx, hy, hz);
+		glVertex3f(ex, ey, ez);
+		glEnd();
+
+		glBegin(mode);
+		glColor3f(0.0, 1.0, 0.0);
+		glVertex3f(ax, ay, az);
+		glVertex3f(ex, ey, ez);
+		glVertex3f(fx, fy, fz);
+		glVertex3f(bx, by, bz);
+		glEnd();
+
+
+		glBegin(mode);
+		glColor3f(0.0, 1.0, 0.0);
+		glVertex3f(gx, gy, gz);
+		glVertex3f(cx, cy, cz);
+		glVertex3f(bx, by, bz);
+		glVertex3f(fx, fy, fz);
+		glEnd();
+
+		glBegin(mode);
+		glColor3f(0.0, 1.0, 0.0);
+		glVertex3f(gx, gy, gz);
+		glVertex3f(hx, hy, hz);
+		glVertex3f(dx, dy, dz);
+		glVertex3f(cx, cy, cz);
+		glEnd();
+	}
+}
+
+void rotateBrick(int x, int y, int z) {
+	xangle = (xangle + x) % 360;
+	yangle = (yangle + y) % 360;
+	zangle = (zangle + z) % 360;
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glTranslatef(brickX, brickY, brickZ);
+	glRotatef(xangle, 1.0, 0.0, 0.0);
+	glRotatef(yangle, 0.0, 1.0, 0.0);
+	glRotatef(zangle, 0.0, 0.0, 1.0);
+	glTranslatef(-brickX, -brickY, -brickZ);
+	glutPostRedisplay();
+}
+
+void landingAnimation() {
+	if (animationStep < MAX_ANIMATION_STEPS) {
+		// Change colors
+		randColor = true;
+		glutPostRedisplay();
+		// Explode brick
+	}
+}
+
+// Our launch animation for the brick
+void launch(int value) {
+	// Number of animation steps
+	// If the brick is in the air update the position
+	if (isAirborn) {
+		if (brickX + brickWidth >= WINDOW_WIDTH || brickX - brickWidth <= 0) {
+			// bounce off wall
+			xVelocity *= -1;
+		}
+
+		if (brickY + brickHeight <= 0) {
+			// bounce off ceiling
+			yVelocity *= -1;
+		}
+
+		// Update the bricks position
+		airTime = (clock() - startTime) / (double)CLOCKS_PER_SEC;
+		downwardForce = GRAVITY * (airTime*airTime);
+		brickX += xVelocity;
+		brickY += yVelocity - downwardForce;
+
+		rotateBrick(5, 5, 5);
+
+		// Check if the brick has hit the ground
+		if (brickY + brickWidth >= WINDOW_HEIGHT) {
+			isAirborn = false;
+			landed = true;
+			xVelocity = 0;
+			yVelocity = 0;
+			animationStep = 0;
+		}
+	}
+	else if (landed) {
+		landingAnimation();
+		animationStep++;
+	}
+	glutTimerFunc(TIME, launch, 0);
 }
 
 //---------------------------------------
@@ -123,31 +276,26 @@ void mouse(int button, int state, int x, int y) {
 		brickSelected = true;
 		cout << "Left mouse click!" << x << ", " << y << endl;
 	}
-	else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP) {
+	else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP && brickSelected) {
+		// Update brick velocity variables for launch
 		cout << "Release the brick @ " << x << ", " << y << endl;
-		finalX = x;
-		finalY = y;
+		int deltaX = x - initialX;
+		int deltaY = y - initialY;
 		brickSelected = false;
+		xVelocity = -(deltaX)/10;
+		yVelocity = -(deltaY)/10;
+		// Start timer to simulate gravity
+		startTime = clock();
 		isAirborn = true;
 
-		// Launch brick
-		xVelocity = finalX - initialX;
-		yVelocity = finalY - initialY;
-		clock_t start;
-		double duration;
-
-		start = clock();
-
-		while (isAirborn) {
-			brickX = brickX + (xVelocity * (clock() - start) / (double)CLOCKS_PER_SEC);
-			brickY = brickY + (yVelocity * (std::clock() - start) / (double)CLOCKS_PER_SEC);
-			if (brickX >= WINDOW_WIDTH || brickY >= WINDOW_HEIGHT || brickX <= 0 || brickY <= 0) {
-				isAirborn = false;
-			}
-			glutPostRedisplay();
-		}
-
-		cout << "Brick landed" << endl;
+		cout << "Delta X: " << deltaX << endl;
+		cout << "Delta Y: " << deltaY << endl;
+		cout << "X velocity: " << xVelocity << endl;
+		cout << "Y velocity: " << yVelocity << endl;
+		glutPostRedisplay();
+	}
+	else if (button == GLUT_RIGHT_BUTTON) {
+		cout << x << ", " << y << endl;
 	}
 }
 
@@ -159,7 +307,6 @@ void drag(int x, int y) {
 		// redraw the brick at the current x, y
 		brickX = x;
 		brickY = y;
-		cout << "Dragging at " << x << ", " << y << endl;
 
 		// Redraw objects
 		glutPostRedisplay();
@@ -179,6 +326,17 @@ void keyboard(unsigned char key, int x, int y) {
 		xangle = (xangle + 5) % 360;
 	else if (key == 'Y')
 		yangle = (yangle + 5) % 360;
+	else if (key == 'r') {
+		// Reset all variables
+		brickX = INIT_X;
+		brickY = INIT_Y;
+		xVelocity = 0;
+		yVelocity = 0;
+		downwardForce = GRAVITY;
+		randColor = false;
+		// Rotate back to original angle
+		rotateBrick(-xangle, -yangle, -zangle);
+	}
 
 	// Redraw objects
 	glutPostRedisplay();
@@ -191,12 +349,10 @@ void display() {
 	// Incrementally rotate objects
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glRotatef(xangle, 1.0, 0.0, 0.0);
-	glRotatef(yangle, 0.0, 1.0, 0.0);
 
 	// Draw brick
 	brick(brickX - brickWidth, brickX + brickWidth, brickY - brickHeight, brickY + brickHeight, brickZ - brickDepth, brickZ + brickDepth);
+
 	glFlush();
 }
 
@@ -210,6 +366,7 @@ int main(int argc, char *argv[]) {
 	glutInitDisplayMode(GLUT_RGB | GLUT_SINGLE | GLUT_DEPTH);
 	glutCreateWindow("Angry Bricks");
 	glutDisplayFunc(display);
+	glutTimerFunc(TIME, launch, 0);
 	glutKeyboardFunc(keyboard);
 	glutMouseFunc(mouse);
 	glutMotionFunc(drag);
