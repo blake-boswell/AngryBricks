@@ -59,12 +59,14 @@ void init() {
 	glOrtho(0.0, 1000.0, 500.0, 0.0, -500.0, 500.0);
 	glEnable(GL_DEPTH_TEST);
 
+	// Reset tip
+	cout << "To reset the program hit \"r\"" << endl;
+
 	// Get random rotation speeds
 	srand(time(NULL));
 	xRotateSpeed = rand() % 10 + 1;
 	yRotateSpeed = rand() % 10 + 1;
 	zRotateSpeed = rand() % 10 + 1;
-	cout << "X, Y, Z Rotate Speeds: " << xRotateSpeed << ", " << yRotateSpeed << ", " << zRotateSpeed << endl;
 }
 
 void randomRGB(float& red, float& green, float& blue) {
@@ -245,7 +247,7 @@ void launch(int value) {
 		brickX += xVelocity;
 		brickY += yVelocity - downwardForce;
 
-		rotateBrick(5, 5, 5);
+		rotateBrick(xRotateSpeed, yRotateSpeed, zRotateSpeed);
 
 		// Check if the brick has hit the ground
 		if (brickY + brickWidth >= WINDOW_HEIGHT) {
@@ -274,11 +276,9 @@ void mouse(int button, int state, int x, int y) {
 		initialX = brickX;
 		initialY = brickY;
 		brickSelected = true;
-		cout << "Left mouse click!" << x << ", " << y << endl;
 	}
 	else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP && brickSelected) {
 		// Update brick velocity variables for launch
-		cout << "Release the brick @ " << x << ", " << y << endl;
 		int deltaX = x - initialX;
 		int deltaY = y - initialY;
 		brickSelected = false;
@@ -288,10 +288,6 @@ void mouse(int button, int state, int x, int y) {
 		startTime = clock();
 		isAirborn = true;
 
-		cout << "Delta X: " << deltaX << endl;
-		cout << "Delta Y: " << deltaY << endl;
-		cout << "X velocity: " << xVelocity << endl;
-		cout << "Y velocity: " << yVelocity << endl;
 		glutPostRedisplay();
 	}
 	else if (button == GLUT_RIGHT_BUTTON) {
